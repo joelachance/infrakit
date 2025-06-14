@@ -1,4 +1,6 @@
-import './log';
+import { initLogging } from './log';
+
+initLogging();
 
 console.log("Hello, world!");
 console.warn("Warning!");
