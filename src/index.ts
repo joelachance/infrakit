@@ -1,8 +1,12 @@
-import { initLogging } from './log';
+import { configureLogging, captureErrors } from './log';
 
-initLogging();
+configureLogging({ pretty: true });
+captureErrors();
 
 console.log("Hello, world!");
+console.log("Raw message", { raw: true });
 console.warn("Warning!");
 console.error(new Error("Boom"));
+console.info("Some info");
 
+throw new Error("Unhandled!");
