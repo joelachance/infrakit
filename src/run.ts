@@ -1,6 +1,10 @@
-import { configureLogging, captureErrors } from './log';
+import { configureLogging, captureErrors, effectLogError } from './log';
 
 configureLogging({ pretty: true });
 captureErrors();
 
-import('./index');
+import('./index').catch((err) => {
+  effectLogError(err);
+  process.exitCode = 1;
+});
+
