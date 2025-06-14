@@ -7,3 +7,4 @@ import('./index').catch((err) => {
   effectLogError(err);
   process.exitCode = 1;
 });
+
