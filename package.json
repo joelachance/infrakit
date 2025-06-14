@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/run.ts"
   },
   "keywords": ["infra", "infrakit", "observability", "logs", "metrics", "tracing"],
   "author": "joelachance",
