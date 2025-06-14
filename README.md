@@ -18,6 +18,13 @@ const message = greet('World');
 console.log(message); // Output: Hello, World!
 ```
 
+## Logging
+
+The provided logging helper is built for **Node.js** environments and relies on
+Node's standard streams. When bundled for the browser the library falls back to
+basic `console` methods, so features like log file output and advanced
+formatting are not available.
+
 ## API Reference
 
 ### `greet(name: string): string`
