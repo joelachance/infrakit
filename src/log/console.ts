@@ -1,9 +1,7 @@
 import { Effect, Logger, pipe } from 'effect';
 import { LoggingOptions } from './types';
 import { globalOptions } from './options';
-
-/** Stack trace from the most recently captured error. */
-export let lastErrorBacktrace: string | null = null;
+import { explainError } from './errorExplain';
 
 // Save original console methods for restoration and raw logging.
 export const originalConsoleLog = console.log.bind(console);
@@ -77,6 +75,8 @@ function runEffect(effect: Effect.Effect<void, never, never>, opts: Required<Log
   }
 }
 
+
+
 /**
  * Log using an Effect logger, applying per-call and global options.
  */
@@ -84,25 +84,29 @@ function effectLogWith(
   effectFn: (...msg: ReadonlyArray<any>) => Effect.Effect<void, never, never>,
   fallback: (...args: unknown[]) => void,
   ...input: unknown[]
-): void {
+): string | null {
   const [args, local] = parseOptions(input);
   const opts: Required<LoggingOptions> = { ...globalOptions, ...local } as Required<LoggingOptions>;
 
+  let trace: string | null = null;
+
   if (opts.raw) {
     fallback(...args);
-    return;
+    return null;
   }
 
   if (effectFn === Effect.logError) {
     for (let i = 0; i < args.length; i++) {
       const val = args[i];
       if (val instanceof Error) {
-        lastErrorBacktrace = val.stack ?? null;
+        if (typeof val.stack === 'string') {
+          trace = val.stack;
+        }
         args[i] = val.toString();
       } else if (val && typeof val === 'object' && 'stack' in val) {
         const stack = (val as any).stack;
         if (typeof stack === 'string') {
-          lastErrorBacktrace = stack;
+          trace = stack;
         }
         args[i] = String(val);
       }
@@ -110,6 +114,7 @@ function effectLogWith(
   }
 
   runEffect(effectFn(...args), opts);
+  return trace;
 }
 
 /**
@@ -123,7 +128,14 @@ export function effectLog(...input: unknown[]): void {
  * Public helper to log errors via Effect while capturing the stack trace.
  */
 export function effectLogError(...input: unknown[]): void {
-  effectLogWith(Effect.logError, originalConsoleError, ...input);
+  const trace = effectLogWith(Effect.logError, originalConsoleError, ...input);
+  if (trace) {
+    void explainError(trace).then((summary) => {
+      if (summary) {
+        originalConsoleLog(summary);
+      }
+    });
+  }
 }
 
 /**
@@ -148,7 +160,7 @@ function effectConsoleWarn(...args: unknown[]): void {
  * Console replacement for `console.error` routed through Effect.
  */
 function effectConsoleError(...args: unknown[]): void {
-  effectLogWith(Effect.logError, originalConsoleError, ...args);
+  effectLogError(...args);
 }
 
 /**
