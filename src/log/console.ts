@@ -17,15 +17,8 @@ export const originalConsoleError = console.error.bind(console);
  */
 function makeCustomLogger(opts: Required<LoggingOptions>): Logger.Logger<unknown, void> {
   return Logger.make(({ logLevel, message }) => {
-    const parts: unknown[] = [];
-    if (opts.timestamp) {
-      parts.push(new Date().toISOString());
-    }
-    if (opts.label) {
-      parts.push(`[${logLevel.label}]`);
-    }
     const msg = Array.isArray(message) ? message : [message];
-    originalConsoleLog(...parts, ...msg);
+    originalConsoleLog(...msg);
   });
 }
 
@@ -41,15 +34,11 @@ function parseOptions(args: unknown[]): [unknown[], LoggingOptions] {
     const maybeOpts = args[args.length - 1] as Record<string, unknown>;
     const hasOpts =
       'pretty' in maybeOpts ||
-      'raw' in maybeOpts ||
-      'timestamp' in maybeOpts ||
-      'label' in maybeOpts;
+      'raw' in maybeOpts;
     if (hasOpts) {
       const opts: LoggingOptions = {
         pretty: maybeOpts.pretty as boolean | undefined,
         raw: maybeOpts.raw as boolean | undefined,
-        timestamp: maybeOpts.timestamp as boolean | undefined,
-        label: maybeOpts.label as boolean | undefined,
       };
       return [args.slice(0, -1), opts];
     }
