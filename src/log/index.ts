@@ -2,6 +2,7 @@ import { Effect, Logger, LogLevel, pipe } from "effect";
 export * from './console';
 export * from './errorCapture';
 export * from './options';
+export * from './errorExplain';
 
 interface LogConfig {
   pretty?: boolean;
