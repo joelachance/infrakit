@@ -6,8 +6,6 @@ import { LoggingOptions } from './types';
  */
 export let globalOptions: Required<LoggingOptions> = {
   pretty: false,
-  timestamp: false,
-  label: true,
   raw: false,
 };
 
