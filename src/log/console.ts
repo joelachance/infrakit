@@ -75,8 +75,6 @@ function runEffect(effect: Effect.Effect<void, never, never>, opts: Required<Log
   }
 }
 
-
-
 /**
  * Log using an Effect logger, applying per-call and global options.
  */
@@ -84,29 +82,36 @@ function effectLogWith(
   effectFn: (...msg: ReadonlyArray<any>) => Effect.Effect<void, never, never>,
   fallback: (...args: unknown[]) => void,
   ...input: unknown[]
-): string | null {
+): void {
   const [args, local] = parseOptions(input);
   const opts: Required<LoggingOptions> = { ...globalOptions, ...local } as Required<LoggingOptions>;
 
-  let trace: string | null = null;
-
   if (opts.raw) {
     fallback(...args);
-    return null;
+    return;
   }
 
   if (effectFn === Effect.logError) {
     for (let i = 0; i < args.length; i++) {
       const val = args[i];
       if (val instanceof Error) {
-        if (typeof val.stack === 'string') {
-          trace = val.stack;
-        }
+        const trace = val.stack;
         args[i] = val.toString();
+        if (trace) {
+          void explainError(trace).then((summary) => {
+            if (summary) {
+              originalConsoleLog(summary);
+            }
+          });
+        }
       } else if (val && typeof val === 'object' && 'stack' in val) {
         const stack = (val as any).stack;
         if (typeof stack === 'string') {
-          trace = stack;
+          void explainError(stack).then((summary) => {
+            if (summary) {
+              originalConsoleLog(summary);
+            }
+          });
         }
         args[i] = String(val);
       }
@@ -114,7 +119,6 @@ function effectLogWith(
   }
 
   runEffect(effectFn(...args), opts);
-  return trace;
 }
 
 /**
@@ -125,17 +129,10 @@ export function effectLog(...input: unknown[]): void {
 }
 
 /**
- * Public helper to log errors via Effect while capturing the stack trace.
+ * Public helper to log errors via Effect.
  */
 export function effectLogError(...input: unknown[]): void {
-  const trace = effectLogWith(Effect.logError, originalConsoleError, ...input);
-  if (trace) {
-    void explainError(trace).then((summary) => {
-      if (summary) {
-        originalConsoleLog(summary);
-      }
-    });
-  }
+  effectLogWith(Effect.logError, originalConsoleError, ...input);
 }
 
 /**
@@ -144,23 +141,26 @@ export function effectLogError(...input: unknown[]): void {
 function effectConsoleLog(...args: unknown[]): void {
   effectLogWith(Effect.log, originalConsoleLog, ...args);
 }
+
 /**
  * Console replacement for `console.info` routed through Effect.
  */
 function effectConsoleInfo(...args: unknown[]): void {
   effectLogWith(Effect.logInfo, originalConsoleInfo, ...args);
 }
+
 /**
  * Console replacement for `console.warn` routed through Effect.
  */
 function effectConsoleWarn(...args: unknown[]): void {
   effectLogWith(Effect.logWarning, originalConsoleWarn, ...args);
 }
+
 /**
  * Console replacement for `console.error` routed through Effect.
  */
 function effectConsoleError(...args: unknown[]): void {
-  effectLogError(...args);
+  effectLogWith(Effect.logError, originalConsoleError, ...args);
 }
 
 /**

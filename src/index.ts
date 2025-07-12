@@ -8,5 +8,3 @@ console.log("Raw message", { raw: true });
 console.warn("Warning!");
 console.error(new Error("Boom"));
 console.info("Some info");
-
-throw new Error("Unhandled!");
